@@ -1,6 +1,6 @@
 import os
 import shutil
-from inquirer import prompt, List, Confirm
+from inquirer import prompt, List, Confirm, Text
 
 class FileSorter:
     def __init__(self, source_dir):
@@ -28,14 +28,14 @@ class FileSorter:
                 shutil.move(source_path, destination_path)
                 print(f"Moved: {file} to {extension} folder")
 
-    def move_large_files(self):
-        # Déplacer les fichiers de plus de 1 Go dans le dossier "A Mettre A Jour"
+    def move_small_files(self, size_threshold):
+        # Déplacer les fichiers de moins de la taille minimal dans le dossier "A Mettre A Jour"
         update_folder = os.path.join(self.source_dir, "A Mettre A Jour")
         os.makedirs(update_folder, exist_ok=True)
 
         for file in os.listdir(self.source_dir):
             file_path = os.path.join(self.source_dir, file)
-            if os.path.isfile(file_path) and os.path.getsize(file_path) < 1e9:  # Taille < 1 Go
+            if os.path.isfile(file_path) and os.path.getsize(file_path) < size_threshold:  
                 destination_path = os.path.join(update_folder, file)
                 shutil.move(file_path, destination_path)
                 print(f"Moved: {file} to 'A Mettre A Jour' folder")
@@ -60,13 +60,19 @@ def main():
 
     if "1. Filtrer les fichiers par extension" in answers['action']:
         file_sorter = FileSorter(source_dir)
-        move_large_files_question = Confirm('move_large_files',
-                                            message="Voulez-vous mettre les fichiers de moins de 1 Go dans un dossier séparé ?")
-        move_large_files_answer = prompt([move_large_files_question])
-        if move_large_files_answer['move_large_files']:
-            file_sorter.move_large_files()
+        
+        # Ajout d'une question pour spécifier la taille minimal en mégaoctets
+        size_threshold_input = Text('size_threshold',
+                                    message="Entrez la taille minimal en mégaoctets pour déplacer les fichiers dans 'A Mettre A Jour' (entrez 0 pour désactiver cette option) : ")
+        size_threshold_answer = prompt([size_threshold_input])
+        size_threshold = int(size_threshold_answer['size_threshold']) * 1e6  # Convertir en octets
+
+        # Déplacer les fichiers de moins de la taille minimal vers "A Mettre A Jour"
+        if size_threshold > 0:
+            file_sorter.move_small_files(size_threshold)
+
         file_sorter.create_extension_folders()
-        file_sorter.move_files()  # Déplace toujours les fichiers dans des dossiers par extension
+        file_sorter.move_files()
 
     elif "2. Donner la liste des fichiers" in answers['action']:
         file_types_input = input("Entrez l'extension des fichiers à filtrer (séparées par des espaces, appuyez sur Entrée pour traiter toutes les extensions) : ")
