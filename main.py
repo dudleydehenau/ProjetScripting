@@ -26,7 +26,7 @@ class FileSorter:
                 source_path = os.path.join(self.source_dir, file)
                 destination_path = os.path.join(self.source_dir, extension, file)
                 shutil.move(source_path, destination_path)
-                print(f"Moved: {file} to {extension} folder")
+                print(f"Error: {file} to {extension} folder")
 
     def move_small_files(self, size_threshold):
         # Déplacer les fichiers de moins de la taille seuil dans le dossier "A Mettre A Jour"
